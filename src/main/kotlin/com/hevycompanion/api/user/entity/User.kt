@@ -18,21 +18,17 @@ class User(
     @Column(name = "id", updatable = false, nullable = false)
     val id: UUID = UUID.randomUUID(),
 
-    @Column(name = "username", nullable = false, unique = true)
-    val dbUsername: String = "",
+    @Column(name = "hevy_username", nullable = true, unique = true)
+    val hevyUserName: String? = null,
 
     @Column(nullable = false, unique = true)
     val email: String = "",
 
     @Column(name = "password", nullable = false)
-    val dbPassword: String = "",
+    val dbPassword: String? = "",
 
     @Column(nullable = false)
     var timezone: String = "UTC",
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "sex", nullable = true)
-    var sex: Sex? = null,
 
     @Column(name = "height_cm", nullable = true)
     var heightCm: Double? = null,
@@ -50,7 +46,7 @@ class User(
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     val updatedAt: Instant = Instant.now()
-) : UserDetails { // Added the missing colon and space
+) : UserDetails {
 
     fun getAge(): Int? {
         return birthDate?.let { Period.between(it, LocalDate.now()).years }
@@ -59,8 +55,11 @@ class User(
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> =
         mutableListOf(SimpleGrantedAuthority("ROLE_USER"))
 
-    override fun getPassword(): String = dbPassword
-    override fun getUsername(): String = dbUsername
+    override fun getPassword(): String? = dbPassword
+
+
+    override fun getUsername(): String = email
+
 
     override fun isAccountNonExpired(): Boolean = true
     override fun isAccountNonLocked(): Boolean = true
@@ -75,5 +74,5 @@ class User(
 
     override fun hashCode(): Int = id.hashCode()
 
-    override fun toString(): String = "User(id=$id, username='$dbUsername')"
+    override fun toString(): String = "User(id=$id, username='$hevyUserName')"
 }

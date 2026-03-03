@@ -27,3 +27,16 @@ data class AuthResponse(
     val accessToken: String,
     val hevyUserName: String?
 )
+
+data class HevyKeyRequest(
+    @field:NotBlank(message = "Hevy API key cannot be blank")
+    val apiKey: String
+)
+
+data class UserProfileResponse(
+    val id: String,
+    val email: String,
+    val timezone: String,
+    val hevyUsername: String?,
+    val hasHevyKey: Boolean
+)

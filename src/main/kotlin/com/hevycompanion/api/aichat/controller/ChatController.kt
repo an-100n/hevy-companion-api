@@ -1,6 +1,9 @@
 package com.hevycompanion.api.aichat.controller
 
 import com.hevycompanion.api.aichat.service.HevyAnalysisService
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onErrorResume
 import org.springframework.ai.chat.client.ChatClient
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -19,7 +22,12 @@ class ChatController(
         .build()
 
     @GetMapping()
-    suspend fun chat(@RequestParam(value = "message", defaultValue = "Hello. Is bicep curl with dumbbells a good exercise?") message: String): String {
+    suspend fun chat(
+        @RequestParam(
+            value = "message",
+            defaultValue = "Hello. Is bicep curl with dumbbells a good exercise?"
+        ) message: String
+    ): String {
         return chatClient.prompt()
             .user(message)
             .call()
@@ -32,25 +40,26 @@ class ChatController(
     fun analyzeWorkout(
         @PathVariable workoutId: String,
         authentication: Authentication
-    ): Flux<String> {
+    ): Flow<String> {
         val userId = UUID.fromString(authentication.name)
-        
+
         return analysisService.analyzeWorkout(userId, workoutId)
-            .onErrorResume { e -> 
-                Flux.just("\n\n[Error: ${e.message}]") 
+            .catch { e ->
+                emit("\n\n[Error: ${e.message}]")
             }
+
     }
 
     @GetMapping("/analyze/routine/{routineId}", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun analyzeRoutine(
         @PathVariable routineId: UUID,
         authentication: Authentication
-    ): Flux<String> {
+    ): Flow<String> {
         val userId = UUID.fromString(authentication.name)
-        
+
         return analysisService.analyzeRoutineHistory(userId, routineId)
-            .onErrorResume { e -> 
-                Flux.just("\n\n[Error: ${e.message}]") 
+            .catch { e ->
+                emit("\n\n[Coaching Error: ${e.message}]")
             }
     }
 }

@@ -41,7 +41,7 @@ class RoutineService(private val routineRepository: RoutineRepository) {
             val existingRoutine = existingRoutines.find { it.hevyRoutineId == hevyId }
 
             if (existingRoutine != null) {
-                // It already exists in DB, just update it
+                // It already exists in DB, just update it1
                 existingRoutine.isActive = true
                 existingRoutine.name = selection.name
                 existingRoutine.lastSyncedAt = Instant.now()

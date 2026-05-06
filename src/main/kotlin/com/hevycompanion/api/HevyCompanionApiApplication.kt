@@ -7,5 +7,7 @@ import org.springframework.boot.runApplication
 class HevyCompanionApiApplication
 
 fun main(args: Array<String>) {
-	runApplication<HevyCompanionApiApplication>(*args)
+	runApplication<HevyCompanionApiApplication>(*args){
+		addInitializers(DotenvInit())
+	}
 }

@@ -1,7 +1,9 @@
 package com.hevycompanion.api.user.service
 
 import com.hevycompanion.api.user.dto.UserProfileResponse
+import com.hevycompanion.api.user.entity.User
 import com.hevycompanion.api.user.repository.UserRepository
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -12,32 +14,43 @@ class UserService(
     private val encryptionService: EncryptionService
 ) {
 
+    // Called on first login — creates a minimal profile if one doesn't exist yet
+    @Transactional
+    fun syncProfile(userId: UUID): UserProfileResponse {
+        val user = userRepository.findByIdOrNull(userId) ?: userRepository.save(
+            User(
+                id = userId,
+                email = "placeholder@hevycompanion.com",
+                username = "User_${userId.toString().take(5)}"
+            )
+        )
+        return user.toProfileResponse()
+    }
+
     @Transactional
     fun saveHevyKey(userId: UUID, rawKey: String) {
-        val user = userRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
+        val user = userRepository.findByIdOrNull(userId)
+            ?: throw IllegalArgumentException("User not found")
 
-        // 1. Encrypt the raw key
-        val encryptedKey = encryptionService.encrypt(rawKey)
+        user.hevyApiKey = encryptionService.encrypt(rawKey)
             ?: throw IllegalStateException("Failed to encrypt key")
 
-        // 2. Save the cipher text to the database
-        user.hevyApiKey = encryptedKey
         userRepository.save(user)
     }
 
     @Transactional(readOnly = true)
     fun getUserProfile(userId: UUID): UserProfileResponse {
-        val user = userRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("User not found") }
-
-        return UserProfileResponse(
-            id = user.id.toString(),
-            email = user.email,
-            timezone = user.timezone,
-            hevyUsername = user.username,
-            // SECURITY: Only return TRUE or FALSE, never the string itself!
-            hasHevyKey = !user.hevyApiKey.isNullOrBlank()
-        )
+        val user = userRepository.findByIdOrNull(userId)
+            ?: throw IllegalArgumentException("User not found")
+        return user.toProfileResponse()
     }
+
+    // Extension function kept private here — only UserService needs to map User → response
+    private fun User.toProfileResponse() = UserProfileResponse(
+        id = id.toString(),
+        email = email,
+        timezone = timezone,
+        hevyUsername = username,
+        hasHevyKey = !hevyApiKey.isNullOrBlank()
+    )
 }

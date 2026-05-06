@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.withContext
 import org.springframework.ai.chat.client.ChatClient
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -74,46 +75,42 @@ class HevyAnalysisService(
     }
 
 
-    // 1. We return a Flow<String> (The Kotlin-native version of Flux)
     fun analyzeRoutineHistory(userId: UUID, routineId: UUID): Flow<String> = flow {
 
-        // 2. The Blocking DB Call: Handled safely on the IO Dispatcher
-        // This replaces Mono.fromCallable + subscribeOn
         val routine = withContext(Dispatchers.IO) {
-            routineRepository.findById(routineId)
-                .orElseThrow { IllegalArgumentException("Routine not found") }
+            routineRepository.findByIdOrNull(routineId) ?: throw IllegalArgumentException("Routine not found")
         }
 
-        // 3. Fetch from Hevy (Sequential and clean)
-        val historyResponse = hevyClient.getWorkouts(userId, page = 1, pageSize = 10)
+        val historyResponse = withContext(Dispatchers.IO) {
+            hevyClient.getWorkouts(userId, page = 1, pageSize = 10)
+        }
 
         val matchedWorkouts = historyResponse.workouts
             .filter { it.title == routine.name }
             .take(5)
 
         if (matchedWorkouts.isEmpty()) {
-            emit("I couldn't find any recent workout history for '${routine.name}'. Log some sessions and check back!")
-            return@flow // We’re done here, mission scrubbed.
+            emit("I couldn’t find any recent workout history for ‘${routine.name}’. Log some sessions and check back!")
+            return@flow
         }
 
-        // 4. Building the prompt (Exactly the same logic, but cleaner flow)
-        val promptBuilder = StringBuilder()
-        promptBuilder.append("Please analyze the history for the routine: '${routine.name}'.\n\n")
+        val prompt = buildString {
+            appendLine("Please analyze the history for the routine: ‘${routine.name}’.\n")
 
-        matchedWorkouts.reversed().forEachIndexed { index, workout ->
-            promptBuilder.append("--- WORKOUT ${index + 1} (Date: ${workout.startTime}) ---\n")
-            promptBuilder.append(workoutContextService.formatWorkoutForAi(workout))
-            promptBuilder.append("\n")
+            matchedWorkouts.reversed().forEachIndexed { index, workout ->
+                appendLine("--- WORKOUT ${index + 1} (Date: ${workout.startTime}) ---")
+                appendLine(workoutContextService.formatWorkoutForAi(workout))
+                appendLine()
+            }
         }
 
-        // 5. Connect to Spring AI / Gemini and stream the result
-        // .asFlow() converts the Spring AI Flux into a Kotlin Flow
-        historyChatClient.prompt()
-            .user(promptBuilder.toString())
-            .stream()
-            .content()
-            .asFlow()
-            .collect { emit(it) } // Pipe the AI chunks directly to our output flow
+        emitAll(
+            historyChatClient.prompt()
+                .user(prompt)
+                .stream()
+                .content()
+                .asFlow()
+        )
     }
 
     private fun calculateDuration(workout: HevyWorkout): Long {

@@ -97,7 +97,7 @@ data class HevySet(
     @JsonProperty("reps")
     val reps: Int?,
     @JsonProperty("distance_meters")
-    val distanceMers: Double?,
+    val distanceMeters: Double?,
     @JsonProperty("duration_seconds")
     val durationSeconds: Int?,
     @JsonProperty("rpe")

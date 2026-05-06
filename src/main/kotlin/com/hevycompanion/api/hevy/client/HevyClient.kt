@@ -9,17 +9,19 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
 import com.hevycompanion.api.hevy.dto.HevyWorkoutsResponse
 import com.hevycompanion.api.hevy.dto.HevyExerciseTemplatesResponse
+import org.springframework.beans.factory.annotation.Value
 import java.util.UUID
 
 
 @Service
 class HevyClient(
     private val userRepository: UserRepository,
-    private val encryptionService: EncryptionService
+    private val encryptionService: EncryptionService,
+    @Value($$"${HEVY_API_URL}") private val baseUrl: String
 ) {
 
     private val restClient = RestClient.builder()
-        .baseUrl("https://api.hevyapp.com/v1")
+        .baseUrl(baseUrl)
         .build()
 
     private fun getDecryptedApiKey(userId: UUID): String {

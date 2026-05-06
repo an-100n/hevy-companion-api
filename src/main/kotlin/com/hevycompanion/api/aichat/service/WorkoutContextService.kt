@@ -3,6 +3,7 @@ package com.hevycompanion.api.aichat.service
 import com.hevycompanion.api.hevy.dto.HevyWorkout
 import com.hevycompanion.api.hevy.repository.ExerciseDictionaryRepository
 import org.springframework.stereotype.Service
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import kotlin.jvm.optionals.getOrNull
 
@@ -11,34 +12,25 @@ class WorkoutContextService(
     private val dictionaryRepository: ExerciseDictionaryRepository
 ) {
 
-    fun formatWorkoutForAi(workout: HevyWorkout): String {
-        val builder = StringBuilder()
+    companion object {
+        private val DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+    }
 
-        val date = workout.startTime.atZone(java.time.ZoneId.of("UTC"))
-            .format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-        builder.append("Date: $date\n")
+    fun formatWorkoutForAi(workout: HevyWorkout): String = buildString {
+        val date = workout.startTime.atZone(ZoneOffset.UTC).format(DATE_FORMATTER)
+        appendLine("Date: $date")
 
         for (exercise in workout.exercises) {
-            val exerciseName =
-                dictionaryRepository.findById(exercise.exerciseTemplateId).getOrNull()?.title ?: "Unknown"
-            builder.append("Exercise: $exerciseName\n")
+            val exerciseName = dictionaryRepository.findById(exercise.exerciseTemplateId)
+                .getOrNull()?.title ?: "Unknown"
+            appendLine("Exercise: $exerciseName")
 
-            val groupedSets = exercise.sets.groupBy { it.type }
-
-            for ((type, sets) in groupedSets) {
-                // e.g. "warmup", "normal"
+            exercise.sets.groupBy { it.type }.forEach { (type, sets) ->
                 val setString = sets.joinToString(", ") { set ->
-                    // Build string like "33kg x 10"
-                    val weight = set.weightKg ?: 0.0
-                    val reps = set.reps ?: 0
-                    "${weight}kg x $reps"
+                    "${set.weightKg ?: 0.0}kg x ${set.reps ?: 0}"
                 }
-
-                builder.append("- ${type.replaceFirstChar { it.uppercase() }}: $setString\n")
+                appendLine("- ${type.replaceFirstChar { it.uppercase() }}: $setString")
             }
-
         }
-        return builder.toString()
-
     }
 }

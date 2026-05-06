@@ -3,13 +3,10 @@ package com.hevycompanion.api.aichat.controller
 import com.hevycompanion.api.aichat.service.HevyAnalysisService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.onErrorResume
 import org.springframework.ai.chat.client.ChatClient
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import reactor.core.publisher.Flux
 import java.util.UUID
 
 @RestController
@@ -34,8 +31,7 @@ class ChatController(
             .content() ?: "No response from AI"
     }
 
-    // Notice the produces = MediaType.TEXT_EVENT_STREAM_VALUE
-    // This tells the browser to keep the connection open and read chunks!
+    // produces = TEXT_EVENT_STREAM_VALUE keeps the connection open and sends chunks as they arrive
     @GetMapping("/analyze/{workoutId}", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun analyzeWorkout(
         @PathVariable workoutId: String,

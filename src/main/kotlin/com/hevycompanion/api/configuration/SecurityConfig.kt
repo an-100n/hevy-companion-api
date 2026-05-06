@@ -18,35 +18,37 @@ import org.springframework.web.filter.CorsFilter
 @EnableWebSecurity
 class SecurityConfig {
 
+    // Registers a CORS filter at the highest priority so it runs before Spring Security.
+    // This means preflight OPTIONS requests are handled before auth checks.
     @Bean
     fun customCorsFilter(): FilterRegistrationBean<CorsFilter> {
-        val source = UrlBasedCorsConfigurationSource()
-        val config = CorsConfiguration()
-        config.allowCredentials = true
-        config.addAllowedOrigin("http://localhost:5173")
-        config.addAllowedOrigin("http://127.0.0.1:5173")
-        config.addAllowedOrigin("http://localhost:8081")
-        config.addAllowedOrigin("http://192.168.178.53:5173")
-        config.addAllowedHeader("*")
-        config.addAllowedMethod("*")
-        source.registerCorsConfiguration("/**", config)
+        val config = CorsConfiguration().apply {
+            allowCredentials = true
+            addAllowedOrigin("http://localhost:5173")
+            addAllowedOrigin("http://127.0.0.1:5173")
+            addAllowedOrigin("http://localhost:8081")
+            addAllowedOrigin("http://192.168.178.53:5173")
+            addAllowedHeader("*")
+            addAllowedMethod("*")
+        }
 
-        val bean = FilterRegistrationBean(CorsFilter(source))
-        // This is the magic line. It forces the CORS filter to run BEFORE Spring Security.
-        bean.order = Ordered.HIGHEST_PRECEDENCE 
-        return bean
+        val source = UrlBasedCorsConfigurationSource().apply {
+            registerCorsConfiguration("/**", config)
+        }
+
+        return FilterRegistrationBean(CorsFilter(source)).apply {
+            order = Ordered.HIGHEST_PRECEDENCE
+        }
     }
 
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .cors { it.disable() } // Disable internal Spring Security CORS, the bean above handles it perfectly.
+            .cors { it.disable() } // Spring Security's built-in CORS is disabled; customCorsFilter() handles it
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
-                    // We no longer need to explicitly permit OPTIONS, the FilterRegistrationBean handles it before security.
-                    //.requestMatchers(HttpMethod.GET, "/api/v1/chat").permitAll()//TODO need to remove this
                     .requestMatchers("/api/v1/auth/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/leaderboards/global").permitAll()
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
@@ -54,16 +56,10 @@ class SecurityConfig {
             }
             .oauth2ResourceServer { oauth2 ->
                 oauth2.jwt { jwt ->
-                    jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
+                    jwt.jwtAuthenticationConverter(JwtAuthenticationConverter())
                 }
             }
 
         return http.build()
-    }
-
-    @Bean
-    fun jwtAuthenticationConverter(): JwtAuthenticationConverter {
-        val converter = JwtAuthenticationConverter()
-        return converter
     }
 }

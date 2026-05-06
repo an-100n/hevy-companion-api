@@ -58,4 +58,17 @@ class ChatController(
                 emit("\n\n[Coaching Error: ${e.message}]")
             }
     }
+
+    @GetMapping("/analyze/workout-history/{workoutId}", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun analyzeWorkoutHistory(
+        @PathVariable workoutId: String,
+        authentication: Authentication
+    ): Flow<String> {
+        val userId = UUID.fromString(authentication.name)
+
+        return analysisService.analyzeWorkoutHistory(userId, workoutId)
+            .catch { e ->
+                emit("\n\n[Error: ${e.message}]")
+            }
+    }
 }

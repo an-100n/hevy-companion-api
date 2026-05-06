@@ -11,13 +11,14 @@ import java.util.UUID
 @Service
 class HevySyncService(
     private val hevyClient: HevyClient,
-    private val dictionaryRepository: ExerciseDictionaryRepository
+    private val dictionaryRepository: ExerciseDictionaryRepository,
+    private val exerciseCache: ExerciseDictionaryCache
 ) {
     private val logger = LoggerFactory.getLogger(HevySyncService::class.java)
 
     @Transactional
     fun syncExerciseDictionary(userId: UUID) {
-        logger.info("Starting Exercise Dictionary Sync for user: {}", userId)
+        logger.info("Starting exercise dictionary sync for user: {}", userId)
 
         var page = 1
         val allTemplates = mutableListOf<ExerciseDictionary>()
@@ -39,7 +40,8 @@ class HevySyncService(
 
         if (allTemplates.isNotEmpty()) {
             dictionaryRepository.saveAll(allTemplates)
-            logger.info("Successfully saved {} exercise templates to the dictionary.", allTemplates.size)
+            exerciseCache.refresh()
+            logger.info("Saved {} exercise templates and refreshed cache.", allTemplates.size)
         }
     }
 }

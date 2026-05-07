@@ -10,7 +10,7 @@ import jakarta.persistence.Table
 class ExerciseDictionary(
     @Id
     @Column(name = "id", updatable = false, nullable = false)
-    val id: String, // This is the Hevy exercise_template_id (e.g., "1B2B1E7C")
+    val id: String,
 
     @Column(nullable = false)
     val title: String

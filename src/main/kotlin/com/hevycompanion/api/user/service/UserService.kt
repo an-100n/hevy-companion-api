@@ -14,7 +14,6 @@ class UserService(
     private val encryptionService: EncryptionService
 ) {
 
-    // Called on first login — creates a minimal profile if one doesn't exist yet
     @Transactional
     fun syncProfile(userId: UUID): UserProfileResponse {
         val user = userRepository.findByIdOrNull(userId) ?: userRepository.save(
@@ -45,7 +44,6 @@ class UserService(
         return user.toProfileResponse()
     }
 
-    // Extension function kept private here — only UserService needs to map User → response
     private fun User.toProfileResponse() = UserProfileResponse(
         id = id.toString(),
         email = email,

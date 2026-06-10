@@ -42,14 +42,15 @@ class SecurityConfig {
 
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
-        http
-            .cors { it.disable() } // Spring Security's built-in CORS is disabled; customCorsFilter() handles it
-            .csrf { it.disable() }
-            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+        http.cors { it.disable() }
+            .csrf { it.disable() }.sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
+                auth.requestMatchers(
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**",
+                ).permitAll()
                 auth.anyRequest().authenticated()
-            }
-            .oauth2ResourceServer { oauth2 ->
+            }.oauth2ResourceServer { oauth2 ->
                 oauth2.jwt { jwt ->
                     jwt.jwtAuthenticationConverter(JwtAuthenticationConverter())
                 }

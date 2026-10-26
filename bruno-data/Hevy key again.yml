@@ -4,9 +4,14 @@ info:
   seq: 6
 
 http:
-  method: GET
+  method: PUT
   url: http://localhost:8081/api/v1/users/hevy-key
-  auth: inherit
+  body:
+    type: json
+    data: '{"apiKey": "fc12385d-3642-4d80-af3d-91bf58056878"}'
+  auth:
+    type: bearer
+    token: "{{token}}"
 
 settings:
   encodeUrl: true

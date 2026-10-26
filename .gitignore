@@ -42,3 +42,4 @@ out/
 .kotlin
 .env
 .env*
+bruno-data/response.json

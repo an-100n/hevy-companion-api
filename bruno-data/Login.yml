@@ -1,0 +1,39 @@
+info:
+  name: Login
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: https://vgdkmgetpzudngknevhc.supabase.co/auth/v1/token?grant_type=password
+  headers:
+    - name: apikey
+      value: sb_publishable_Wd4lDXS0Uuv4drUSpNTnhg_YiMsgqvR
+  params:
+    - name: grant_type
+      value: password
+      type: query
+  body:
+    type: json
+    data: |-
+      {
+        "email":"test@example.com",
+        "password":"password123"
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJFUzI1NiIsImtpZCI6ImVlMDVlY2UwLTQyZDktNGFmOC1iYTBhLWVhMmY2ZTZiN2RlZSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3ZnZGttZ2V0cHp1ZG5na25ldmhjLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJjMmJlMTE0OS02ZDI4LTQwNzUtYjZhMC0wYmY1NmVlOWJhNGMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzczOTMzNjYyLCJpYXQiOjE3NzM5MzAwNjIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZW1haWxfdmVyaWZpZWQiOnRydWUsImZ1bGxfbmFtZSI6IiIsImhldnlfYXBpX2tleSI6IiJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzczOTIxNTM4fV0sInNlc3Npb25faWQiOiIwMTNhZTAyOC00MGRlLTRlNDktOGVhZS1jMDBjNTIxZjZiZGUiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.gVK9n73JBJYccM-EvBw-3x0GQM-4YdRJ64EEA7-7EfshEf30mbFX5GMdPJYxSYqAwXIlYwacze43cR-qlBqb9w
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const data = res.getBody();
+        bru.setVar("token", data.access_token);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
